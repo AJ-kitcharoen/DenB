@@ -1,4 +1,4 @@
 # ingonre all node_modules
-node_modules/*
+node_modules/
 # ingonre config file
 config/config.env
