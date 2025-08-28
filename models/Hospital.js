@@ -32,6 +32,19 @@ const HospitalSchema = new momgoose.Schema({
         type: String,
         required: [true, 'Please add a region']
     }
+
+},{
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
 });
 
-module.exports = momgoose.model('Hospital', HospitalSchema);
+//Reverse populate with virtuals
+HospitalSchema.virtual('appointments', {
+    ref: 'Appointment',
+    localField: '_id',
+    foreignField: 'hospital',
+    justOne: false
+});
+
+module.exports = momgoose.model('Hospital', HospitalSchema, 'hospital');
+// module.exports = momgoose.model('Hospital', HospitalSchema);
