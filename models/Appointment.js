@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const Hospital = require('./Hospital');
+const Dental = require('./Dental');
 
 const AppointmentSchema = new mongoose.Schema({
     apptDate: {
@@ -11,9 +11,9 @@ const AppointmentSchema = new mongoose.Schema({
         ref: 'User',
         required: true
     },
-    hospital:{
+    dental:{
         type: mongoose.Schema.ObjectId,
-        ref: 'Hospital',
+        ref: 'Dental',
         required: true
     },
     createdAt: {

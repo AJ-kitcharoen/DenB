@@ -1,9 +1,9 @@
 const momgoose=require('mongoose');
 
-const HospitalSchema = new momgoose.Schema({
+const DentalSchema = new momgoose.Schema({
     name: {
         type: String,
-        required: [true, 'Please add a hospital name'],
+        required: [true, 'Please add a dental name'],
         unique: true,
         trim: true,
         maxlength: [50, 'Name can not be more than 50 characters']
@@ -39,12 +39,12 @@ const HospitalSchema = new momgoose.Schema({
 });
 
 //Reverse populate with virtuals
-HospitalSchema.virtual('appointments', {
+DentalSchema.virtual('appointments', {
     ref: 'Appointment',
     localField: '_id',
-    foreignField: 'hospital',
+    foreignField: 'dental',
     justOne: false
 });
 
-module.exports = momgoose.model('Hospital', HospitalSchema, 'hospital');
-// module.exports = momgoose.model('Hospital', HospitalSchema);
+module.exports = momgoose.model('Dental', DentalSchema, 'dental');
+// module.exports = momgoose.model('Dental', DentalSchema);

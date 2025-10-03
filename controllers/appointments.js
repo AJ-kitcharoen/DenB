@@ -1,5 +1,5 @@
 const Appointment = require('../models/Appointment');
-const Hospital = require('../models/Hospital');
+const Dental = require('../models/Dental');
 
 //@des Get all appointments
 //@route GET /api/v1/appointments
@@ -9,19 +9,19 @@ exports.getAppointments = async(req, res,next) => {
     //General user can see only his/her appointments
     if(req.user.role !== 'admin'){
         query = Appointment.find({user: req.user.id}).populate({
-            path: 'hospital',
+            path: 'dental',
             select: 'name province tel'
             });
     } else{ //Admin can see all appointments
-        if(req.params.hospitalId){
-            console.log(req.params.hospitalId);
-            query = Appointment.find({hospital: req.params.hospitalId}).populate({
-                path: 'hospital',
+        if(req.params.dentalId){
+            console.log(req.params.dentalId);
+            query = Appointment.find({dental: req.params.dentalId}).populate({
+                path: 'dental',
                 select: 'name province tel'
             });
         } else
             query = Appointment.find().populate({
-                path: 'hospital',
+                path: 'dental',
                 select: 'name province tel'
             }); 
     }
@@ -48,7 +48,7 @@ exports.getAppointments = async(req, res,next) => {
 exports.getAppointment = async(req, res,next) => {
     try{
         const appointment = await Appointment.findById(req.params.id).populate({
-            path: 'hospital',
+            path: 'dental',
             select: 'name description tel'
         });
 
@@ -73,19 +73,19 @@ exports.getAppointment = async(req, res,next) => {
 };
 
 //@des Add appointment
-//@route POST /api/v1/hospitals/:hospitalId/appointments
+//@route POST /api/v1/dentals/:dentalId/appointments
 //@access Private
 exports.addAppointment = async(req, res,next) => {
     try{
-        // recive hospitalId from URL
-        req.body.hospital = req.params.hospitalId;
+        // recive dentalId from URL
+        req.body.dental = req.params.dentalId;
 
-        const hospital = await Hospital.findById(req.params.hospitalId);
+        const dental = await Dental.findById(req.params.dentalId);
 
-        if(!hospital){
+        if(!dental){
             return res.status(404).json({
                 success: false,
-                msg:`No hospital with the id of ${req.params.hospitalId}`
+                msg:`No dental with the id of ${req.params.dentalId}`
             });
         }
 
