@@ -1,81 +1,90 @@
-const Appointment = require('../models/Appointment');
+const Booking = require('../models/Booking');
 const Dental = require('../models/Dental');
+const generateInvoice = require('../utils/generateInvoice');
+const AuditLog = require('../models/AuditLog');
 
-//@des Get all appointments
-//@route GET /api/v1/appointments
+//@des Get all bookings
+//@route GET /api/v1/bookings
 //@access Public
-exports.getAppointments = async(req, res,next) => {
+exports.getBookings = async(req, res,next) => {
+
     let query;
-    //General user can see only his/her appointments
+
+        //General user can see only his/her bookings
     if(req.user.role !== 'admin'){
-        query = Appointment.find({user: req.user.id}).populate({
+        query = Booking.find({user: req.user.id}).populate({
             path: 'dental',
             select: 'name province tel'
             });
-    } else{ //Admin can see all appointments
+    } else{ //Admin can see all bookings
         if(req.params.dentalId){
             console.log(req.params.dentalId);
-            query = Appointment.find({dental: req.params.dentalId}).populate({
+            query = Booking.find({dental: req.params.dentalId}).populate({
                 path: 'dental',
                 select: 'name province tel'
             });
         } else
-            query = Appointment.find().populate({
+            query = Booking.find().populate({
                 path: 'dental',
                 select: 'name province tel'
             }); 
     }
     try{
-        const appointments = await query;
+        const bookings = await query;
         res.status(200).json({
             success: true,
-            count: appointments.length,
-            data: appointments
+            count: bookings.length,
+            data: bookings
     });
     } catch (err) {
         console.log(err.stack);
         return res.status(500).json({
             success: false,
-            msg:"Cannot find appointment"
+            msg:"Cannot find booking"
         });
     }
 };
 
 
-//@des Get single appointment
-//@route GET /api/v1/appointments/:id
-//@access Public
-exports.getAppointment = async(req, res,next) => {
+//@des Get single booking
+//@route GET /api/v1/bookings/:id
+//@access Private
+exports.getBooking = async(req, res,next) => {
     try{
-        const appointment = await Appointment.findById(req.params.id).populate({
+        const booking = await Booking.findById(req.params.id).populate({
             path: 'dental',
             select: 'name description tel'
         });
 
-        if(!appointment){
+        if(!booking){
             return res.status(404).json({
                 success: false,
-                msg:`No appointment with the id of ${req.params.id}`
+                msg:`No booking with the id of ${req.params.id}`
             });
+        }
+
+        // Only allow owner or admin to access
+        if (booking.user._id.toString() !== req.user.id && req.user.role !== 'admin') {
+            return res.status(401).json({ success: false, msg: 'Not authorized' });
         }
 
         res.status(200).json({
             success: true,
-            data: appointment
+            data: booking
         });
     } catch (err) {
         console.log(err.stack);
         return res.status(500).json({
             success: false,
-            msg:"Cannot find appointment"
+            msg:"Cannot find booking"
         });
     }
 };
 
-//@des Add appointment
-//@route POST /api/v1/dentals/:dentalId/appointments
+//@des Add booking
+//@route POST /api/v1/dentals/:dentalId/bookings
 //@access Private
-exports.addAppointment = async(req, res,next) => {
+exports.addBooking = async(req, res,next) => {
     try{
         // recive dentalId from URL
         req.body.dental = req.params.dentalId;
@@ -91,95 +100,128 @@ exports.addAppointment = async(req, res,next) => {
 
         // Add user to req.body
         req.body.user = req.user.id;
-        // Check for existing appointment
-        const existingAppointment = await Appointment.find({user: req.user.id});
-        // if the user is not an admin, they can only create 3 appointments
-        if(existingAppointment.length >= 3 && req.user.role !== 'admin'){
+        // Check for existing booking
+        const existingBooking = await Booking.find({user: req.user.id});
+        // if the user is not an admin, they can only create 1 booking
+        if(existingBooking.length >= 1 && req.user.role !== 'admin'){
             return res.status(400).json({
                 success: false,
-                msg:`The user with ID ${req.user.id} has already made 3 appointments`
+                msg:`The user with ID ${req.user.id} has already made a booking`
             });
         }
 
-        const appointment = await Appointment.create(req.body);
+        const booking = await Booking.create(req.body);
+
+        // Populate user for the invoice
+        const user = req.user;
+
+        // Generate PDF invoice
+        generateInvoice(booking, dental, user);
+
+        if(req.user.role === 'admin'){
+            await AuditLog.create({
+                actionType: 'Create_Booking',
+                user: req.user.id,
+                // details: `Admin ${req.user.id} created a booking ${booking._id} for user ${booking.user}`
+                details:{dentalID:req.params.id}
+            });
+        }
 
         res.status(200).json({
             success: true,
-            data: appointment
+            data: booking
         });
     } catch (err) {
         console.log(err.stack);
         return res.status(500).json({
             success: false,
-            msg:"Cannot create appointment"
+            msg:"Cannot create a booking"
         });
     }
 }
 
-//@des Update appointment
-//@route PUT /api/v1/appointments/:id
+//@des Update booking
+//@route PUT /api/v1/bookings/:id
 //@access Private
-exports.updateAppointment = async(req, res,next) => {
+exports.updateBooking = async(req, res,next) => {
     try{
-        let appointment = await Appointment.findById(req.params.id);
+        let booking = await Booking.findById(req.params.id);
 
-        if(!appointment){
+        if(!booking){
             return res.status(404).json({
                 success: false,
-                msg:`No appointment with the id of ${req.params.id}`
+                msg:`No booking with the id of ${req.params.id}`
             });
         }
 
-        // Make sure user is appointment owner
-        if(appointment.user.toString() !== req.user.id && req.user.role !== 'admin'){
+        // Make sure user is booking owner
+        if(booking.user.toString() !== req.user.id && req.user.role !== 'admin'){
             return res.status(401).json({
                 success: false,
-                msg:'User not authorized to update this appointment'
+                msg:'User not authorized to update this booking'
             });
         }
 
-        appointment = await Appointment.findByIdAndUpdate(req.params.id, req.body, {
+        booking = await Booking.findByIdAndUpdate(req.params.id, req.body, {
             new: true,
             runValidators: true
         });
 
+        if(req.user.role === 'admin'){
+            await AuditLog.create({
+                actionType: 'Update_Booking',
+                adminID: req.user.id,
+                // details: `Admin ${req.user.id} updated booking ${booking._id} for user ${booking.user}`
+                details:{dentalID:req.params.id}
+            });
+        }
+
         res.status(200).json({
             success: true,
-            data: appointment
+            data: booking
         });
     }   catch (err) {
         console.log(err.stack);
         return res.status(500).json({
             success: false,
-            msg:"Cannot update appointment"
+            msg:"Cannot update booking"
         });
     }
 };
 
-//@des Delete appointment
-//@route DELETE /api/v1/appointments/:id
+//@des Delete booking
+//@route DELETE /api/v1/bookings/:id
 //@access Private
-exports.deleteAppointment = async(req, res,next) => {
+exports.deleteBooking = async(req, res,next) => {
     try{
-        const appointment = await Appointment.findById(req.params.id);
+        const booking = await Booking.findById(req.params.id);
 
-        if(!appointment){
+        if(!booking){
             return res.status(404).json({
                 success: false,
-                msg:`No appointment with the id of ${req.params.id}`
+                msg:`No booking with the id of ${req.params.id}`
             });
         }
 
-        // Make sure user is appointment owner
-        if(appointment.user.toString() !== req.user.id && req.user.role !== 'admin'){
+        // Make sure user is booking owner
+        if(booking.user.toString() !== req.user.id && req.user.role !== 'admin'){
             return res.status(401).json({
                 success: false,
-                msg:'User not authorized to delete this appointment'
+                msg:'User not authorized to delete this booking'
             });
         }
 
-        await appointment.deleteOne();
-        // await appointment.remove();
+        await booking.deleteOne();
+        // await booking.remove();
+
+        if(req.user.role === 'admin'){
+            await AuditLog.create({
+                actionType: 'Delete_Booking',
+                adminID: req.user.id,
+                // details: `Admin ${req.user.id} deleted booking ${booking._id} for user ${booking.user}`
+                details:{dentalID:req.params.id}
+            });
+        }
 
         res.status(200).json({
             success: true,
@@ -189,7 +231,7 @@ exports.deleteAppointment = async(req, res,next) => {
         console.log(err.stack);
         return res.status(500).json({
             success: false,
-            msg:"Cannot delete appointment"
+            msg:"Cannot delete booking"
         });
     }
 };
