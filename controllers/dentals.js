@@ -1,5 +1,7 @@
 const Dental = require('../models/Dental');
-const Appointment = require('../models/Appointment');
+const Booking = require('../models/Booking');
+const AuditLog = require('../models/AuditLog');
+
 
 //@des Get all dentals
 //@route GET /api/v1/dentals
@@ -20,6 +22,7 @@ exports.getDentals = async(req, res,next) => {
     let queryStr = JSON.stringify(reqQuery);
 
     // queryStr = queryStr.replace(/\b(gt|gte|lt|lte|in)\b/g, match => `$${match}`);    // ...existing code...
+    
     // Convert operators in reqQuery
     Object.keys(reqQuery).forEach(key => {
         const match = key.match(/^(.+)\[(gt|gte|lt|lte|in)\]$/);
@@ -31,7 +34,7 @@ exports.getDentals = async(req, res,next) => {
 
     // Finding resource
     // query = Dental.find(JSON.parse(queryStr));
-    query = Dental.find(reqQuery).populate('appointments');
+    query = Dental.find(reqQuery).populate('bookings');
 
     // Select Fields
     if (req.query.select) {
@@ -116,12 +119,26 @@ exports.getDental = async(req, res,next) => {
 //@route POST /api/v1/dentals
 //@access Private
 exports.createDental = async (req, res,next) => {
-    // console.log(req.body);
-    const dental = await Dental.create(req.body);
-    res.status(201).json({
-        success: true,
-        data: dental
-});
+    try{
+        // console.log(req.body);
+        const dental = await Dental.create(req.body);
+        await AuditLog.create({
+            action: 'Created_Dental',
+            adminID: req.user.id,
+            // details: `Dental ${dental._id} created`
+            details:{dentalId:req.params.id}
+        });
+    
+        res.status(201).json({
+            success: true,
+            data: dental
+    });
+} catch (error) {
+        res.status(400).json({
+            success: false,
+            error: error.message
+        });
+    }
 };
 
 //@des Update single dental
@@ -140,6 +157,14 @@ exports.updateDental = async (req, res,next) => {
                 success: false,
             });
         }
+
+        await AuditLog.create({
+            action: 'Updated_Dental',
+            adminID: req.user.id,
+            // details: `Dental ${dental._id} updated`
+            details:{dentalId:req.params.id}
+        });
+
         res.status(200).json({
             success: true,
             data: dental
@@ -164,9 +189,15 @@ exports.deleteDental = async(req, res,next) => {
                 success: false,
                 message: 'Dental not found with the id of ${req.params.id}'});
             }
-        // Delete associated appointments
-        await Appointment.deleteMany({ dental: req.params.id });
+        // Delete associated bookings
+        await Booking.deleteMany({ dental: req.params.id });
         await dental.deleteOne({_id: req.params.id});
+        await AuditLog.create({
+            action: 'Deleted_Dental',
+            adminID: req.user.id,
+            // details: `Dental ${dental._id} deleted`
+            details:{dentalId:req.params.id}
+        });
         
 
         res.status(200).json({

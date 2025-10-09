@@ -1,8 +1,8 @@
 const mongoose = require('mongoose');
 const Dental = require('./Dental');
 
-const AppointmentSchema = new mongoose.Schema({
-    apptDate: {
+const BookingSchema = new mongoose.Schema({
+    bookingDate: {
         type: Date,
         required:true
     },
@@ -22,4 +22,4 @@ const AppointmentSchema = new mongoose.Schema({
     }
 });
 
-module.exports = mongoose.model('Appointment', AppointmentSchema);
+module.exports = mongoose.model('booking', BookingSchema);

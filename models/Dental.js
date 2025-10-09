@@ -8,29 +8,42 @@ const DentalSchema = new momgoose.Schema({
         trim: true,
         maxlength: [50, 'Name can not be more than 50 characters']
     },
-    address: {
+    yearsOfExperience: {
+        type: Number,
+        required: [true, 'Please add years of experience'],
+        min: [0, 'Years must be >= 0']
+    }, areaOfExpertise: {
+        type: [{
         type: String,
-        required: [true, 'Please add an address']
+        trim: true,
+        enum: [
+            'General Dentistry',
+            'Orthodontics',
+            'Endodontics',
+            'Periodontics',
+            'Prosthodontics',
+            'Oral Surgery',
+            'Pediatric Dentistry',
+            'Implantology'
+        ]
+        }],
+        required: [true, 'Please add at least one area of expertise'],
+        default: ['General Dentistry'],           // ค่า default ถ้าไม่ส่งมา
+        validate: {
+        validator: (arr) => Array.isArray(arr) && arr.length > 0,
+        message: 'Please add at least one area of expertise'
+        },
+        set: (arr) => Array.isArray(arr)
+        ? [...new Set(arr.map(s => (s ?? '').trim()))].filter(Boolean) // trim + ลบค่าซ้ำ + ตัดค่าว่าง
+        : arr
     },
-    district: {
-        type: String,
-        required: [true, 'Please add a district']
+    available: {
+        type: Boolean,
+        default: true
     },
-    province: {
-        type: String,  
-        required: [true, 'Please add a province']
-    },
-    postalcode: {
-        type: String,
-        required: [true, 'Please add a postal code'],
-        maxlength: [5, 'Postal code can not be more than 5 digits']
-    },
-    tel: {
-        type: String,
-    },
-    region:{
-        type: String,
-        required: [true, 'Please add a region']
+    createdAt: {
+        type: Date,
+        default: Date.now
     }
 
 },{
@@ -39,8 +52,8 @@ const DentalSchema = new momgoose.Schema({
 });
 
 //Reverse populate with virtuals
-DentalSchema.virtual('appointments', {
-    ref: 'Appointment',
+DentalSchema.virtual('bookings', {
+    ref: 'Booking',
     localField: '_id',
     foreignField: 'dental',
     justOne: false
