@@ -4,14 +4,14 @@ const { getDentals, getDental, createDental, updateDental, deleteDental } = requ
 // ...existing code...
 
 //Include other resource routers
-const appointmentsRouter = require('./appointments');
+const bookingsRouter = require('./bookings');
 
 const router = express.Router();
 
 const {protect,authorize} = require('../middleware/auth');
 
 //re-route into other resource routers
-router.use('/:dentalId/appointments',appointmentsRouter);
+router.use('/:dentalId/bookings',bookingsRouter);
 // const app=express();
 router.route('/')
     .get(getDentals) // Get all dentals
