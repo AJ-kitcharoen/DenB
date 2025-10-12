@@ -18,7 +18,7 @@ dotenv.config({ path: './config/config.env' });
 connectDB();
 
 // route files
-const dentals = require('./routes/dentals');
+const dentists = require('./routes/dentists');
 const auth = require('./routes/auth');
 const bookings = require('./routes/bookings');
 
@@ -38,7 +38,7 @@ app.use(hpp());
 app.use(cors());
 //Mount routers
 app.use(express.json()); // Body parser middleware
-app.use('/api/v1/dentals', dentals);
+app.use('/api/v1/dentists', dentists);
 app.use('/api/v1/auth', auth);
 app.use('/api/v1/bookings', bookings);
 // cookie parser
@@ -63,7 +63,7 @@ const swaggerOptions = {
         info: {
             title: 'Library API',
             version: '1.0.0',
-            description: 'A simple Express Dental API'
+            description: 'A simple Express Dentist API'
         },
         servers: [
             {

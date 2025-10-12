@@ -1,12 +1,12 @@
-const Dental = require('../models/Dental');
+const Dentist = require('../models/Dentist');
 const Booking = require('../models/Booking');
 const AuditLog = require('../models/AuditLog');
 
 
-//@des Get all dentals
-//@route GET /api/v1/dentals
+//@des Get all dentists
+//@route GET /api/v1/dentists
 //@access Public
-exports.getDentals = async(req, res,next) => {
+exports.getDentists = async(req, res,next) => {
     let query;
     // Copy req.query
     const reqQuery = { ...req.query };
@@ -33,8 +33,8 @@ exports.getDentals = async(req, res,next) => {
     });
 
     // Finding resource
-    // query = Dental.find(JSON.parse(queryStr));
-    query = Dental.find(reqQuery).populate('bookings');
+    // query = Dentist.find(JSON.parse(queryStr));
+    query = Dentist.find(reqQuery).populate('bookings');
 
     // Select Fields
     if (req.query.select) {
@@ -57,11 +57,11 @@ exports.getDentals = async(req, res,next) => {
     
     try {
 
-        const total = await Dental.countDocuments();
+        const total = await Dentist.countDocuments();
         query = query.skip(startIndex).limit(limit);
         // Executing query
-        const dentals = await query;
-        // const dentals = await Dental.find(req.query);
+        const dentists = await query;
+        // const dentists = await Dentist.find(req.query);
         // console.log(req.query);
 
         // Pagination result
@@ -82,9 +82,9 @@ exports.getDentals = async(req, res,next) => {
 
         res.status(200).json({
             success: true,
-            count: dentals.length,
+            count: dentists.length,
             pagination,
-            data: dentals
+            data: dentists
 });} catch (error) {
         res.status(400).json({
             success: false,
@@ -92,13 +92,13 @@ exports.getDentals = async(req, res,next) => {
     }
 };
 
-//@des Get single dental
-//@route GET /api/v1/dentals/:id
+//@des Get single dentist
+//@route GET /api/v1/dentists/:id
 //@access Public
-exports.getDental = async(req, res,next) => {
+exports.getDentist = async(req, res,next) => {
     try{
-        const dental = await Dental.findById(req.params.id);
-        if (!dental) {
+        const dentist = await Dentist.findById(req.params.id);
+        if (!dentist) {
             return res.status(400).json({
                 success: false,
             });
@@ -106,7 +106,7 @@ exports.getDental = async(req, res,next) => {
 
         res.status(200).json({
             success: true,
-            data: dental
+            data: dentist
     });
 } catch (error) {
         res.status(400).json({
@@ -115,23 +115,23 @@ exports.getDental = async(req, res,next) => {
     }
 };
 
-//@des Create a dental
-//@route POST /api/v1/dentals
+//@des Create a dentist
+//@route POST /api/v1/dentists
 //@access Private
-exports.createDental = async (req, res,next) => {
+exports.createDentist = async (req, res,next) => {
     try{
         // console.log(req.body);
-        const dental = await Dental.create(req.body);
+        const dentist = await Dentist.create(req.body);
         await AuditLog.create({
-            action: 'Created_Dental',
+            action: 'Created_Dentist',
             adminID: req.user.id,
-            // details: `Dental ${dental._id} created`
-            details:{dentalId:req.params.id}
+            // details: `Dentist ${dentist._id} created`
+            details:{dentistId:req.params.id}
         });
     
         res.status(201).json({
             success: true,
-            data: dental
+            data: dentist
     });
 } catch (error) {
         res.status(400).json({
@@ -141,33 +141,33 @@ exports.createDental = async (req, res,next) => {
     }
 };
 
-//@des Update single dental
-//@route PUT /api/v1/dentals/:id
+//@des Update single dentist
+//@route PUT /api/v1/dentists/:id
 //@access Private
-exports.updateDental = async (req, res,next) => {
+exports.updateDentist = async (req, res,next) => {
     try{
 
-        const dental = await Dental.findByIdAndUpdate(req.params.id, req.body, {
+        const dentist = await Dentist.findByIdAndUpdate(req.params.id, req.body, {
             new: true,
             runValidators: true
         });
 
-        if (!dental) {
+        if (!dentist) {
             return res.status(400).json({
                 success: false,
             });
         }
 
         await AuditLog.create({
-            action: 'Updated_Dental',
+            action: 'Updated_Dentist',
             adminID: req.user.id,
-            // details: `Dental ${dental._id} updated`
-            details:{dentalId:req.params.id}
+            // details: `Dentist ${dentist._id} updated`
+            details:{dentistId:req.params.id}
         });
 
         res.status(200).json({
             success: true,
-            data: dental
+            data: dentist
         });
 } catch (error) {
         res.status(400).json({
@@ -176,27 +176,27 @@ exports.updateDental = async (req, res,next) => {
     }
 };
 
-//@des Delete single dental
-//@route DELETE /api/v1/dentals/:id
+//@des Delete single dentist
+//@route DELETE /api/v1/dentists/:id
 //@access Private
-exports.deleteDental = async(req, res,next) => {
+exports.deleteDentist = async(req, res,next) => {
     try{
-        // const dental = await Dental.findByIdAndDelete(req.params.id);
-        const dental = await Dental.findById(req.params.id);
+        // const dentist = await Dentist.findByIdAndDelete(req.params.id);
+        const dentist = await Dentist.findById(req.params.id);
 
-        if (!dental) {
+        if (!dentist) {
             return res.status(404).json({
                 success: false,
-                message: 'Dental not found with the id of ${req.params.id}'});
+                message: 'Dentist not found with the id of ${req.params.id}'});
             }
         // Delete associated bookings
-        await Booking.deleteMany({ dental: req.params.id });
-        await dental.deleteOne({_id: req.params.id});
+        await Booking.deleteMany({ dentist: req.params.id });
+        await dentist.deleteOne({_id: req.params.id});
         await AuditLog.create({
-            action: 'Deleted_Dental',
+            action: 'Deleted_Dentist',
             adminID: req.user.id,
-            // details: `Dental ${dental._id} deleted`
-            details:{dentalId:req.params.id}
+            // details: `Dentist ${dentist._id} deleted`
+            details:{dentistId:req.params.id}
         });
         
 

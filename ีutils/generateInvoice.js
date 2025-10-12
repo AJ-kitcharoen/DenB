@@ -2,7 +2,7 @@ const PDFDocument = require('pdfkit');
 const fs = require('fs');
 const path = require('path');
 
-const generateInvoice = (booking, dental, user) => {
+const generateInvoice = (booking, dentist, user) => {
     const doc = new PDFDocument();
 
     const invoiceDir=path.join(__dirname,'../invoices');
@@ -34,9 +34,9 @@ const generateInvoice = (booking, dental, user) => {
 
     doc.fontSixe(14).text(`Booking ID: ${booking.id}`);
     doc.text(`Patient Name: ${user.name} (${user.email})`);
-    doc.text(`Dentist Name: ${dental.name}`);
-    doc.text(`Yeat of Experience: ${dental.yearsOfExperience}`);
-    doc.text(`Specialization: ${dental.areaOfExpertise}`);
+    doc.text(`Dentist Name: ${dentist.name}`);
+    doc.text(`Yeat of Experience: ${dentist.yearsOfExperience}`);
+    doc.text(`Specialization: ${dentist.areaOfExpertise}`);
     doc.text(`Booking Date: ${formattedDate}(Thailand Time)`);
     doc.text(`Date: ${new Date().toLocaleDateString()}`);
 
