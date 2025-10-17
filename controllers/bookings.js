@@ -1,5 +1,5 @@
 const Booking = require('../models/Booking');
-const Dental = require('../models/Dental');
+const Dental = require('../models/Dentist');
 const generateInvoice = require('../utils/generateInvoice');
 const AuditLog = require('../models/AuditLog');
 
