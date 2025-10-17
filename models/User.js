@@ -38,7 +38,7 @@ const UserSchema = new mongoose.Schema({
         default: false
     },
     twoFactorTempSecret: String,
-    twoFactorOPTExpire: Date,
+    twoFactorOTPExpire: Date,
     resetPasswordToken: String,
     resetPasswordExpire: Date,
     createdAt: {

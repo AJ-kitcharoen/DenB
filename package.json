@@ -14,8 +14,8 @@
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^17.2.1",
-    "express": "^5.1.0",
-    "express-mongo-sanitize": "^2.2.0",
+    "express": "^4.18.2",
+    "express-mongo-sanitize": "2.2.0",
     "express-rate-limit": "^8.1.0",
     "express-xss-sanitizer": "^2.0.1",
     "helmet": "^8.1.0",
@@ -25,7 +25,7 @@
     "nodemailer": "^7.0.9",
     "pdfkit": "^0.17.2",
     "speakeasy": "^2.0.0",
-    "swagger-jsdoc": "^3.7.0",
+    "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1"
   },
   "devDependencies": {

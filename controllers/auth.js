@@ -38,7 +38,7 @@ exports.register=async (req, res,next) => {
     } catch (error) {
         res.status(400).json({
             success: false});
-            console.log(err.stack);
+            console.log(error.stack);
         }
 };
 
@@ -115,7 +115,7 @@ exports.login=async (req, res,next) => {
     } catch (error) {
         res.status(401).json({
             success: false});
-            console.log(err.stack);
+            console.log(error.stack);
         }
 };  
 
@@ -169,7 +169,7 @@ exports.logout = async(req,res,next) =>
 
         res.status(200).json(
             {
-                sucess: true,
+                success: true,
                 data: {}
             }
         );
