@@ -2,7 +2,6 @@ const Dentist = require('../models/Dentist');
 const Booking = require('../models/Booking');
 const AuditLog = require('../models/AuditLog');
 
-
 //@des Get all dentists
 //@route GET /api/v1/dentists
 //@access Public
@@ -123,10 +122,11 @@ exports.createDentist = async (req, res,next) => {
         // console.log(req.body);
         const dentist = await Dentist.create(req.body);
         await AuditLog.create({
-            action: 'Created_Dentist',
+            actionType: 'Created_Dentist',
             adminID: req.user.id,
             // details: `Dentist ${dentist._id} created`
-            details:{dentistId:req.params.id}
+            details:{dentistId:dentist._id}
+            // details:{ dentistId: Types.ObjectId(req.params.id) }
         });
     
         res.status(201).json({
@@ -159,10 +159,10 @@ exports.updateDentist = async (req, res,next) => {
         }
 
         await AuditLog.create({
-            action: 'Updated_Dentist',
+            actionType: 'Updated_Dentist',
             adminID: req.user.id,
             // details: `Dentist ${dentist._id} updated`
-            details:{dentistId:req.params.id}
+            details:{dentistId:dentist._id}
         });
 
         res.status(200).json({
@@ -191,12 +191,14 @@ exports.deleteDentist = async(req, res,next) => {
             }
         // Delete associated bookings
         await Booking.deleteMany({ dentist: req.params.id });
-        await dentist.deleteOne({_id: req.params.id});
+        // await dentist.deleteOne({_id: req.params.id});
+        await dentist.deleteOne();
         await AuditLog.create({
-            action: 'Deleted_Dentist',
+            actionType: 'Deleted_Dentist',
             adminID: req.user.id,
             // details: `Dentist ${dentist._id} deleted`
-            details:{dentistId:req.params.id}
+            // details:{dentistId:req.params.id}
+            details:{dentistId:dentist._id}
         });
         
 
