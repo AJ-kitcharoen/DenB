@@ -85,8 +85,10 @@ exports.getDentists = async(req, res,next) => {
             pagination,
             data: dentists
 });} catch (error) {
-        res.status(400).json({
+        console.error('getDentists error:', error); // เพิ่ม log เพื่อวิเคราะห์
+        res.status(500).json({
             success: false,
+            error: error.message // ส่ง message กลับเพื่อดีบัก
         });
     }
 };

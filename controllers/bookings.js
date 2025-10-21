@@ -1,5 +1,5 @@
 const Booking = require('../models/Booking');
-const Dental = require('../models/Dentist');
+const Dentist = require('../models/Dentist');
 const generateInvoice = require('../utils/generateInvoice');
 const AuditLog = require('../models/AuditLog');
 
@@ -13,19 +13,19 @@ exports.getBookings = async(req, res,next) => {
         //General user can see only his/her bookings
     if(req.user.role !== 'admin'){
         query = Booking.find({user: req.user.id}).populate({
-            path: 'dental',
+            path: 'dentist',
             select: 'name province tel'
             });
     } else{ //Admin can see all bookings
-        if(req.params.dentalId){
-            console.log(req.params.dentalId);
-            query = Booking.find({dental: req.params.dentalId}).populate({
-                path: 'dental',
+        if(req.params.dentistId){
+            console.log(req.params.dentistId);
+            query = Booking.find({dentist: req.params.dentistId}).populate({
+                path: 'dentist',
                 select: 'name province tel'
             });
         } else
             query = Booking.find().populate({
-                path: 'dental',
+                path: 'dentist',
                 select: 'name province tel'
             }); 
     }
@@ -52,7 +52,7 @@ exports.getBookings = async(req, res,next) => {
 exports.getBooking = async(req, res,next) => {
     try{
         const booking = await Booking.findById(req.params.id).populate({
-            path: 'dental',
+            path: 'dentist',
             select: 'name description tel'
         });
 
@@ -64,9 +64,12 @@ exports.getBooking = async(req, res,next) => {
         }
 
         // Only allow owner or admin to access
-        if (booking.user._id.toString() !== req.user.id && req.user.role !== 'admin') {
-            return res.status(401).json({ success: false, msg: 'Not authorized' });
-        }
+        // if (booking.user._id.toString() !== req.user.id && req.user.role !== 'admin') {
+        //     return res.status(401).json({ success: false, msg: 'Not authorized' });
+        // }
+        if (booking.user.toString() !== req.user.id && req.user.role !== 'admin') {
+             return res.status(401).json({ success: false, msg: 'Not authorized' });
+         }
 
         res.status(200).json({
             success: true,
@@ -82,32 +85,36 @@ exports.getBooking = async(req, res,next) => {
 };
 
 //@des Add booking
-//@route POST /api/v1/dentals/:dentalId/bookings
+//@route POST /api/v1/dentists/:dentistId/bookings
 //@access Private
 exports.addBooking = async(req, res,next) => {
     try{
-        // recive dentalId from URL
-        req.body.dental = req.params.dentalId;
+        // recive dentistId from URL
+        req.body.dentist = req.params.dentistId;
 
-        const dental = await Dental.findById(req.params.dentalId);
+        const dentist = await Dentist.findById(req.params.dentistId);
 
-        if(!dental){
+        if(!dentist){
             return res.status(404).json({
                 success: false,
-                msg:`No dental with the id of ${req.params.dentalId}`
+                msg:`No dentist with the id of ${req.params.dentistId}`
             });
         }
 
         // Add user to req.body
         req.body.user = req.user.id;
         // Check for existing booking
-        const existingBooking = await Booking.find({user: req.user.id});
-        // if the user is not an admin, they can only create 1 booking
-        if(existingBooking.length >= 1 && req.user.role !== 'admin'){
-            return res.status(400).json({
-                success: false,
-                msg:`The user with ID ${req.user.id} has already made a booking`
-            });
+        // const existingBooking = await Booking.find({user: req.user.id});
+        // // if the user is not an admin, they can only create 1 booking
+        // if(existingBooking.length >= 1 && req.user.role !== 'admin'){
+        //     return res.status(400).json({
+        //         success: false,
+        //         msg:`The user with ID ${req.user.id} has already made a booking`
+        //     });
+        // }
+        const dup = await Booking.findOne({ dentist: req.params.dentistId });
+        if (dup) {
+        return res.status(409).json({ success: false, msg: 'This dentist already has a booking' });
         }
 
         const booking = await Booking.create(req.body);
@@ -116,18 +123,26 @@ exports.addBooking = async(req, res,next) => {
         const user = req.user;
 
         // Generate PDF invoice
-        generateInvoice(booking, dental, user);
+        // generateInvoice(booking, dentist, user);
+        try { await generateInvoice(booking, dentist, req.user); }
+         catch (e) { console.error('[invoice] failed:', e); }
 
         if(req.user.role === 'admin'){
             await AuditLog.create({
                 actionType: 'Create_Booking',
-                user: req.user.id,
+                // user: req.user.id,
+                adminID: req.user.id,
                 // details: `Admin ${req.user.id} created a booking ${booking._id} for user ${booking.user}`
-                details:{dentalID:req.params.id}
+                // details:{dentistID:req.params.id}
+                details: {
+                    bookingId: booking._id,
+                    dentistId: req.params.dentistId
+                }
             });
+
         }
 
-        res.status(200).json({
+        res.status(201).json({
             success: true,
             data: booking
         });
@@ -135,7 +150,8 @@ exports.addBooking = async(req, res,next) => {
         console.log(err.stack);
         return res.status(500).json({
             success: false,
-            msg:"Cannot create a booking"
+            msg:"Cannot create a booking",
+            message: err.message
         });
     }
 }
@@ -172,7 +188,8 @@ exports.updateBooking = async(req, res,next) => {
                 actionType: 'Update_Booking',
                 adminID: req.user.id,
                 // details: `Admin ${req.user.id} updated booking ${booking._id} for user ${booking.user}`
-                details:{dentalID:req.params.id}
+                // details:{dentistID:req.params.id}
+                details: { bookingId: booking._id }
             });
         }
 
@@ -219,7 +236,8 @@ exports.deleteBooking = async(req, res,next) => {
                 actionType: 'Delete_Booking',
                 adminID: req.user.id,
                 // details: `Admin ${req.user.id} deleted booking ${booking._id} for user ${booking.user}`
-                details:{dentalID:req.params.id}
+                // details:{dentistID:req.params.id}
+                details:{ bookingId: booking._id }
             });
         }
 

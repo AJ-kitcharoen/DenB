@@ -32,7 +32,7 @@ const generateInvoice = (booking, dentist, user) => {
 
     const formattedDate = new Intl.DateTimeFormat('en-GB', options).format(bookingDate);
 
-    doc.fontSixe(14).text(`Booking ID: ${booking.id}`);
+    doc.fontSize(14).text(`Booking ID: ${booking.id}`);
     doc.text(`Patient Name: ${user.name} (${user.email})`);
     doc.text(`Dentist Name: ${dentist.name}`);
     doc.text(`Yeat of Experience: ${dentist.yearsOfExperience}`);
@@ -40,6 +40,8 @@ const generateInvoice = (booking, dentist, user) => {
     doc.text(`Booking Date: ${formattedDate}(Thailand Time)`);
     doc.text(`Date: ${new Date().toLocaleDateString()}`);
 
+    doc.end();
+    
     return filePath;
     };
 
