@@ -33,7 +33,7 @@ exports.getDentists = async(req, res,next) => {
 
     // Finding resource
     // query = Dentist.find(JSON.parse(queryStr));
-    query = Dentist.find(reqQuery).populate('bookings');
+    query = Dentist.find(reqQuery).populate({ path: 'bookings', model: 'Booking' });
 
     // Select Fields
     if (req.query.select) {
