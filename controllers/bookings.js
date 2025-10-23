@@ -2,6 +2,8 @@ const Booking = require('../models/Booking');
 const Dentist = require('../models/Dentist');
 const generateInvoice = require('../utils/generateInvoice');
 const AuditLog = require('../models/AuditLog');
+const { isValidObjectId } = require('mongoose');
+const User = require('../models/User');
 
 //@des Get all bookings
 //@route GET /api/v1/bookings
@@ -93,6 +95,7 @@ exports.addBooking = async(req, res,next) => {
         req.body.dentist = req.params.dentistId;
 
         const dentist = await Dentist.findById(req.params.dentistId);
+        const dentistId = req.params.dentistId;
 
         if(!dentist){
             return res.status(404).json({
@@ -101,8 +104,17 @@ exports.addBooking = async(req, res,next) => {
             });
         }
 
-        // Add user to req.body
-        req.body.user = req.user.id;
+        // // Add user to req.body
+        // req.body.user = req.user.id;
+        // 2) ตัดสินว่า patient คือใคร
+        const isAdmin = req.user?.role === 'admin';
+        let patientId;
+
+        if (isAdmin && req.body.user && isValidObjectId(req.body.user)) {
+            patientId = req.body.user; // admin เลือกผู้ป่วยเอง
+        } else {
+            patientId = req.user.id;   // ผู้ใช้ทั่วไปจองให้ตัวเอง
+        }   
         // Check for existing booking
         // const existingBooking = await Booking.find({user: req.user.id});
         // // if the user is not an admin, they can only create 1 booking
@@ -112,21 +124,36 @@ exports.addBooking = async(req, res,next) => {
         //         msg:`The user with ID ${req.user.id} has already made a booking`
         //     });
         // }
+        // 3) ป้องกันจองซ้ำตามกติกา (หมอฟัน 1 คน = 1 booking)
         const dup = await Booking.findOne({ dentist: req.params.dentistId });
         if (dup) {
         return res.status(409).json({ success: false, msg: 'This dentist already has a booking' });
         }
 
-        const booking = await Booking.create(req.body);
+        // const booking = await Booking.create(req.body);
 
         // Populate user for the invoice
+        const patient = await User.findById(patientId);
         const user = req.user;
+        // 4) เตรียมข้อมูลสร้าง
+        req.body.dentist   = dentistId;
+        req.body.user      = patientId;      // เจ้าของนัด (patient)
+        req.body.createdBy = req.user.id;    // ผู้สร้าง (อาจเป็น admin)
 
+        // 5) สร้าง
+        const booking = await Booking.create(req.body);
+
+        // 6) สร้างไฟล์ยืนยัน: ใช้ข้อมูล patient
         // Generate PDF invoice
         // generateInvoice(booking, dentist, user);
-        try { await generateInvoice(booking, dentist, req.user); }
-         catch (e) { console.error('[invoice] failed:', e); }
+        try {
+            await generateInvoice(booking, dentist, patient);
+        } catch (e) {
+            console.error('[invoice] failed:', e);
+        }
 
+        
+        // 7) Audit log (ถ้า admin ให้บันทึกว่าใครเป็น patient)
         if(req.user.role === 'admin'){
             await AuditLog.create({
                 actionType: 'Create_Booking',
@@ -134,10 +161,11 @@ exports.addBooking = async(req, res,next) => {
                 adminID: req.user.id,
                 // details: `Admin ${req.user.id} created a booking ${booking._id} for user ${booking.user}`
                 // details:{dentistID:req.params.id}
-                details: {
-                    bookingId: booking._id,
-                    dentistId: req.params.dentistId
-                }
+                // details: {
+                //     bookingId: booking._id,
+                //     dentistId: req.params.dentistId
+                // }
+                details: { bookingId: booking._id, dentistId, patientId }
             });
 
         }
