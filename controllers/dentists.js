@@ -19,8 +19,6 @@ exports.getDentists = async(req, res,next) => {
 
     // Create query string
     let queryStr = JSON.stringify(reqQuery);
-
-    // queryStr = queryStr.replace(/\b(gt|gte|lt|lte|in)\b/g, match => `$${match}`);    // ...existing code...
     
     // Convert operators in reqQuery
     Object.keys(reqQuery).forEach(key => {

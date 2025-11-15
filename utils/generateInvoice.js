@@ -2,49 +2,6 @@ const PDFDocument = require('pdfkit');
 const fs = require('fs');
 const path = require('path');
 
-// const generateInvoice = (booking, dentist, user) => {
-//     const doc = new PDFDocument();
-
-//     const invoiceDir=path.join(__dirname,'../invoices');
-//     if (!fs.existsSync(invoiceDir)){
-//         fs.mkdirSync(invoiceDir);
-//     }
-
-//     const filePath = path.join(invoiceDir, `../invoices/invoice-${booking.id}.pdf`);
-//     doc.pipe(fs.createWriteStream(filePath));
-
-//     doc.fontSize(20).text('Dentist Booking Invoice', { align: 'center' });
-//     doc.moveDown();
-
-//     const bookingDate = new Date(booking.bookingDate);
-
-//     // Set timezone to Asia/Bangkok
-//     const options ={
-//         timezone: 'Asia/Bangkok',
-//         weekday: 'short',
-//         day: '2-digit',
-//         month: 'long',
-//         year: 'numeric',
-//         hour: '2-digit',
-//         minute: '2-digit',
-//         hour12: false
-//     };
-
-//     const formattedDate = new Intl.DateTimeFormat('en-GB', options).format(bookingDate);
-
-//     doc.fontSize(14).text(`Booking ID: ${booking.id}`);
-//     doc.text(`Patient Name: ${user.name} (${user.email})`);
-//     doc.text(`Dentist Name: ${dentist.name}`);
-//     doc.text(`Yeat of Experience: ${dentist.yearsOfExperience}`);
-//     doc.text(`Specialization: ${dentist.areaOfExpertise}`);
-//     doc.text(`Booking Date: ${formattedDate}(Thailand Time)`);
-//     doc.text(`Date: ${new Date().toLocaleDateString()}`);
-
-//     doc.end();
-    
-//     return filePath;
-//     };
-
 function drawSectionBox(doc, x, y, w, h, title) {
   doc.save().roundedRect(x, y, w, h, 8).lineWidth(0.8).strokeColor('#E5E7EB').stroke().restore();
   doc.fontSize(12).fillColor('#111827').text(title, x + 12, y + 10);
@@ -103,7 +60,7 @@ const generateInvoice = (booking, dentist, user) => {
 
       y += boxH + 16;
 
-      // Appointment
+      // Booking Details
       const apptH = 110;
       drawSectionBox(doc, X, y, W, apptH, 'Appointment');
       let y3 = y + 40;

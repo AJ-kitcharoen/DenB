@@ -60,4 +60,7 @@ DentistSchema.virtual('bookings', {
 });
 
 module.exports = momgoose.model('Dentist', DentistSchema, 'dentist');
+
+
+
 // module.exports = momgoose.model('Dentist', DentistSchema);

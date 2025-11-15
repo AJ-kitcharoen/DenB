@@ -104,7 +104,7 @@ exports.addBooking = async(req, res,next) => {
             });
         }
 
-        // // Add user to req.body
+        // Add user to req.body
         // req.body.user = req.user.id;
         // 2) ตัดสินว่า patient คือใคร
         const isAdmin = req.user?.role === 'admin';
@@ -124,11 +124,32 @@ exports.addBooking = async(req, res,next) => {
         //         msg:`The user with ID ${req.user.id} has already made a booking`
         //     });
         // }
+        // const exists = await Booking.exists({ user: patientId });
+        // if (exists) {
+        // return res.status(409).json({
+        //     success: false,
+        //     msg: 'User can book only ONE session'
+        // });
+        // }
         // 3) ป้องกันจองซ้ำตามกติกา (หมอฟัน 1 คน = 1 booking)
-        const dup = await Booking.findOne({ dentist: req.params.dentistId });
-        if (dup) {
-        return res.status(409).json({ success: false, msg: 'This dentist already has a booking' });
+        // const dup = await Booking.findOne({ dentist: req.params.dentistId });
+        // if (dup) {
+        // return res.status(409).json({ success: false, msg: 'This dentist already has a booking' });
+        // }
+        // 1. ใช้ findOne จะเร็วกว่า เพราะเราแค่อยากรู้ว่า "มี" หรือ "ไม่มี"
+        const existingBooking = await Booking.findOne({
+            user: patientId, // ✅ ถูกต้อง: นี่คือ ID ของผู้ป่วยที่จะเข้าจอง
+            apptDate: { $gte: new Date() }
+        });
+
+        // 2. ถ้าเจอ (existingBooking ไม่ใช่ null) และ user ไม่ใช่ admin ก็บล็อก
+        if (existingBooking && req.user.role !== 'admin') {
+            return res.status(400).json({
+                success: false,
+                msg: `The user ${req.user.id} already has an upcoming booking.`
+            });
         }
+
 
         // const booking = await Booking.create(req.body);
 
